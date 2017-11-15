@@ -3,7 +3,7 @@ WORKDIR /go/src/github.com/bitnami/helm-crd/
 COPY . .
 RUN make controller-static
 
-FROM alpine:latest
+FROM alpine:3.6
 RUN apk --no-cache add ca-certificates
 COPY --from=gobuild /go/src/github.com/bitnami/helm-crd/controller-static /controller
 CMD ["/controller"]

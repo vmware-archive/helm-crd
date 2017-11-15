@@ -19,8 +19,7 @@ local controller_overlay = {
           },
           {
             name: "controller",
-            image: "helm-crd-controller:latest",
-            imagePullPolicy: "Never",
+            image: "bitnami/helm-crd-controller:latest",
             securityContext: {
               readOnlyRootFilesystem: true,
             },

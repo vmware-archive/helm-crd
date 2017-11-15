@@ -62,8 +62,7 @@ spec:
         env:
         - name: TMPDIR
           value: /helm
-        image: helm-crd-controller:latest
-        imagePullPolicy: Never
+        image: bitnami/helm-crd-controller:latest
         name: controller
         securityContext:
           readOnlyRootFilesystem: true
