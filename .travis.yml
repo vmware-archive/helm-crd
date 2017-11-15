@@ -1,0 +1,27 @@
+language: go
+
+go:
+  - '1.9'
+
+os:
+  - linux
+
+script:
+  - make
+  - make test
+  - make vet
+
+cache:
+  directories:
+    - $GOPATH/pkg
+    - $GOPATH/bin
+
+branches:
+  only:
+    - master
+    # release tags
+    - /^v\d+\.\d+\.\d+.*/
+
+notifications:
+  email:
+    on_success: never
