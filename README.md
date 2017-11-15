@@ -34,7 +34,7 @@ spec:
 
 ## Install:
 
-`kubectl apply -n kube-system -f deploy/tiller-crd.jsonnet`
+`kubectl apply -n kube-system -f deploy/tiller-crd.yaml`
 
 This will create the CRD, and replace(!) any existing
 `kube-system/tiller-deploy` with an unmodified tiller v2.7.0 release
