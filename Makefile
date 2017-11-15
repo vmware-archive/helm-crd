@@ -15,6 +15,9 @@ controller:
 controller-static:
 	CGO_ENABLED=0 $(GO) build -installsuffix cgo -o $@ ./cmd/controller
 
+test:
+	$(GO) test $(GO_PACKAGES)
+
 vet:
 	$(GO) vet $(GO_PACKAGES)
 
