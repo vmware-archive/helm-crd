@@ -64,3 +64,11 @@ Note that this last point implies full access over the cluster used
 for development (just as before this controller) and chart development
 is best performed against dedicated and disposable test clusters
 (minikube, etc).
+
+### Does this prevent `helm` CLI usage?
+
+No.  The `helm` CLI tool accesses tiller using a Kubernetes port-forward
+into the tiller pod, and this is unaffected by the presence of this
+controller.  Port forward access can be blocked via RBAC policy
+(`pods/portforward` resource) if desired - and leaves HelmRelease resource
+objects as the only way to access tiller functionality.
