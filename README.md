@@ -34,7 +34,28 @@ spec:
 
 ## Install:
 
-`kubectl apply -n kube-system -f deploy/tiller-crd.yaml`
+```
+d=$HOME/.kube/plugins/helm
+mkdir -p $d; cd $d
+wget \
+ https://raw.githubusercontent.com/bitnami/helm-crd/master/plugin/helm/helm \
+ https://raw.githubusercontent.com/bitnami/helm-crd/master/plugin/helm/plugin.yaml
+chmod +x helm
+```
+
+You now have a new kubectl plugin!  See `kubectl plugin helm --help`
+for the new subcommands.
+
+Run `kubectl plugin helm init` to perform the server-side install.
+
+### Server-side only
+
+If you don't want (or need) the kubectl plugin, you can install the
+server-side components directly with:
+
+```
+kubectl apply -n kube-system -f deploy/tiller-crd.yaml
+```
 
 This will create the CRD, and replace(!) any existing
 `kube-system/tiller-deploy` with an unmodified tiller v2.7.0 release
