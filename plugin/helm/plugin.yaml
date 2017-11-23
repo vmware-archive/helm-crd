@@ -1,0 +1,69 @@
+name: helm
+shortDesc: Helm chart plugin
+tree:
+  - name: init
+    shortDesc: initialize Helm-CRD on server
+    longDesc: |
+      This command installs Tiller (the Helm server-side component) onto your
+      Kubernetes Cluster and sets up the Helm CRD controller.
+
+      Note this command installs tiller into kube-system, ignoring
+      the usual --namespace flag.
+    command: "./helm init"
+    flags:
+      - name: url
+        desc: URL of YAML to install
+        defValue: "https://raw.githubusercontent.com/bitnami/helm-crd/master/deploy/tiller-crd.yaml"
+
+  - name: list
+    shortDesc: list releases
+    command: "./helm list"
+
+  - name: install
+    shortDesc: install a chart archive
+    command: "./helm install"
+    example: |
+      kubectl plugin helm install -f myvalues.yaml --name mariadb mariadb
+      kubectl plugin helm install --set name=prod --name mariadb mariadb
+    flags:
+      - name: name
+        desc: release name. If unspecified, it will autogenerate one for you
+      - name: repo
+        desc: "chart repository url where to locate the requested chart"
+        defValue: "https://kubernetes-charts.storage.googleapis.com"
+      - name: version
+        desc: specify the exact chart version to install
+      - name: values
+        shorthand: f
+        desc: specify values in a YAML file
+      - name: set
+        desc: >-
+          set values on the command line (can specify separate
+          values with commas: key1=val1,key2=val2)
+
+  - name: upgrade
+    shortDesc: upgrade a release
+    command: "./helm upgrade"
+    example: |
+      kubectl plugin helm upgrade -f myvalues.yaml mariadb
+      kubectl plugin helm upgrade --version 1.2.3 mariadb
+    flags:
+      - name: repo
+        desc: "chart repository url where to locate the requested chart"
+        defValue: "https://kubernetes-charts.storage.googleapis.com"
+      - name: version
+        desc: specify the exact chart version to install
+      - name: values
+        shorthand: f
+        desc: specify values in a YAML file
+      - name: set
+        desc: >-
+          set values on the command line (can specify multiple or separate
+          values with commas: key1=val1,key2=val2)
+
+  - name: delete
+    shortDesc: >-
+      given a release name, delete the release from Kubernetes
+    command: "./helm delete"
+    example: |
+      kubectl plugin helm delete mariadb redis
