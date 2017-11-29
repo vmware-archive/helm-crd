@@ -15,7 +15,9 @@ local controller_overlay = {
         containers: [
           super.containers[0] {
             assert self.name == "tiller",
-            ports: [], // nuke exposed tiller port
+            // Nuke exposed tiller port
+            ports: [], // Informational only
+            args+: ["--listen=localhost:44134"],  // Restrict to pod only
           },
           {
             name: "controller",

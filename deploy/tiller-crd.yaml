@@ -32,12 +32,14 @@ spec:
         name: tiller
     spec:
       containers:
-      - env:
+      - args:
+        - --listen=localhost:44134
+        env:
         - name: TILLER_NAMESPACE
           value: kube-system
         - name: TILLER_HISTORY_MAX
           value: "0"
-        image: gcr.io/kubernetes-helm/tiller:v2.7.0
+        image: gcr.io/kubernetes-helm/tiller:v2.7.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:

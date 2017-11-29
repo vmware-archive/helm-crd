@@ -1,4 +1,4 @@
-// This is literally `helm init -o json` from helm version v2.7.0
+// This is literally `helm init -o json` from helm version v2.7.2
 {
     "apiVersion": "extensions/v1beta1",
     "kind": "Deployment",
@@ -34,7 +34,7 @@
                                 "value": "0"
                             }
                         ],
-                        "image": "gcr.io/kubernetes-helm/tiller:v2.7.0",
+                        "image": "gcr.io/kubernetes-helm/tiller:v2.7.2",
                         "imagePullPolicy": "IfNotPresent",
                         "livenessProbe": {
                             "httpGet": {
