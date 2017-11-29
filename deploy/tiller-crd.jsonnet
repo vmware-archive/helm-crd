@@ -17,6 +17,7 @@ local controller_overlay = {
             assert self.name == "tiller",
             // Nuke exposed tiller port
             ports: [], // Informational only
+            command: ["/tiller"],
             args+: ["--listen=localhost:44134"],  // Restrict to pod only
           },
           {

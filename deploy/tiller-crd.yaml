@@ -34,6 +34,8 @@ spec:
       containers:
       - args:
         - --listen=localhost:44134
+        command:
+        - /tiller
         env:
         - name: TILLER_NAMESPACE
           value: kube-system
