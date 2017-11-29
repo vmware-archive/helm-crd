@@ -177,7 +177,11 @@ func (c *Controller) updateRelease(key string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := c.helmClient.DeleteRelease(releaseName(ns, name)); err != nil {
+		_, err = c.helmClient.DeleteRelease(
+			releaseName(ns, name),
+			helm.DeletePurge(true),
+		)
+		if err != nil {
 			// fixme: ignore "not found" or similar
 			return err
 		}
