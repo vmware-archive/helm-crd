@@ -1,9 +1,9 @@
 # CustomResourceDefinition for Helm
 
-This is an **experimental** CRD controller for Helm charts.
+This is an **experimental** CRD controller for Helm releases.
 
-You can use this to manage Helm charts (releases) in your cluster via
-regular Kubernetes API objects that look like:
+You can use this to install, upgrade and delete charts in your cluster
+via regular Kubernetes API objects that look like:
 
 ```yaml
 apiVersion: helm.bitnami.com/v1
