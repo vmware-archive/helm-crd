@@ -162,7 +162,7 @@ func releaseName(ns, name string) string {
 func isNotFound(err error) bool {
 	// Ideally this would be `grpc.Code(err) == codes.NotFound`,
 	// but it seems helm doesn't return grpc codes
-	return strings.Contains(grpc.ErrorDesc(err), "not found")
+	return strings.Contains(grpc.ErrorDesc(err), "has no deployed releases")
 }
 
 func (c *Controller) updateRelease(key string) error {

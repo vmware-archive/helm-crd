@@ -1263,110 +1263,146 @@
 		{
 			"checksumSHA1": "Hj1JqeAeCHMtJH+UvzYRov3VrUI=",
 			"path": "k8s.io/helm/pkg/chartutil",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "AWVeraZB+QyL9XxbZrbM1WG36Dw=",
 			"path": "k8s.io/helm/pkg/downloader",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "ppoTcnAkjqADMOTUR1VZGlafQZI=",
 			"path": "k8s.io/helm/pkg/getter",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
-			"checksumSHA1": "ahkgOA+sjOtQ/JrAp6y52pITqwQ=",
+			"checksumSHA1": "Qrl29vmvGVL9qHXZlkWwxZvXc3U=",
 			"path": "k8s.io/helm/pkg/helm",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
-			"checksumSHA1": "GlfL7N7BoISIjLwMd8LcEYwZssk=",
+			"checksumSHA1": "YXvdSwnWO+UwgQmYatERKDaJhYw=",
 			"path": "k8s.io/helm/pkg/helm/environment",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "ykoNZxKs8kWb8bNaxkr5+qRszv8=",
 			"path": "k8s.io/helm/pkg/helm/helmpath",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "DMwBqTHLy2b207GQkqd4yGLvUoU=",
 			"path": "k8s.io/helm/pkg/ignore",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "hz98VjP4zPi93KS2JjtcpxFFv1U=",
 			"path": "k8s.io/helm/pkg/plugin",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
-			"checksumSHA1": "kOgR2wx12hPfzpIdA8yNyrunc4w=",
+			"checksumSHA1": "US0t9LvBi8IKrMCUtMylxACEA/8=",
 			"path": "k8s.io/helm/pkg/proto/hapi/chart",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "xWLGiOgOu0R6oZ8qQAyD627XXn8=",
 			"path": "k8s.io/helm/pkg/proto/hapi/release",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "uKZ76eG1R185ar4pwL04Ko2squU=",
 			"path": "k8s.io/helm/pkg/proto/hapi/services",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "DRRbjNBG1IUbDmMnAd+D+Q7xs3A=",
 			"path": "k8s.io/helm/pkg/proto/hapi/version",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "a9TdezPle3pbFiuFA6iynS63bbI=",
 			"path": "k8s.io/helm/pkg/provenance",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "J+7xqIjTi5+133p4k2Xno+fuQDc=",
 			"path": "k8s.io/helm/pkg/repo",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "+Gjxek69e2LPlCUoRXWzB75LpD8=",
 			"path": "k8s.io/helm/pkg/resolver",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
-			"checksumSHA1": "U8o0zE0hDZLb5jtPFve8D4/U9ik=",
+			"checksumSHA1": "T8AePsVCWkqqlD1hD3D9nWqnUDo=",
 			"path": "k8s.io/helm/pkg/tlsutil",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "p02rTOPtQnRvtRDkIA31dfKRZuc=",
 			"path": "k8s.io/helm/pkg/urlutil",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "x9IXFUVWRDpopLQ6eVj0YUCbR4o=",
 			"path": "k8s.io/helm/pkg/version",
-			"revision": "f6bff5da94cb5b75ca629c2733f4c2db942f9bb4",
-			"revisionTime": "2017-11-09T04:12:35Z"
+			"revision": "8478fb4fc723885b155c924d1c8c410b7a9444e6",
+			"revisionTime": "2017-11-16T01:04:27Z",
+			"version": "v2.7.2",
+			"versionExact": "v2.7.2"
 		},
 		{
 			"checksumSHA1": "/zjulDhlMogVSOhPGM9UlDWyFuo=",
