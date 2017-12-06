@@ -162,7 +162,7 @@ func releaseName(ns, name string) string {
 func isNotFound(err error) bool {
 	// Ideally this would be `grpc.Code(err) == codes.NotFound`,
 	// but it seems helm doesn't return grpc codes
-	return strings.Contains(grpc.ErrorDesc(err), "has no deployed releases")
+	return strings.Contains(grpc.ErrorDesc(err), "not found")
 }
 
 func (c *Controller) updateRelease(key string) error {
@@ -230,19 +230,12 @@ func (c *Controller) updateRelease(key string) error {
 
 	var rel *release.Release
 
-	log.Printf("Updating release %s", rlsName)
-	res, err := c.helmClient.UpdateReleaseFromChart(
-		rlsName,
-		chartRequested,
-		helm.UpdateValueOverrides([]byte(helmObj.Spec.Values)),
-		//helm.UpgradeForce(true), ?
-	)
+	_, err = c.helmClient.ReleaseHistory(rlsName, helm.WithMaxHistory(1))
 	if err != nil {
 		if !isNotFound(err) {
 			return err
 		}
-
-		log.Printf("Existing release %s not found -> installing into namespace %s", rlsName, helmObj.Namespace)
+		log.Printf("Installing release %s into namespace %s", rlsName, helmObj.Namespace)
 		res, err := c.helmClient.InstallReleaseFromChart(
 			chartRequested,
 			helmObj.Namespace,
@@ -254,6 +247,16 @@ func (c *Controller) updateRelease(key string) error {
 		}
 		rel = res.GetRelease()
 	} else {
+		log.Printf("Updating release %s", rlsName)
+		res, err := c.helmClient.UpdateReleaseFromChart(
+			rlsName,
+			chartRequested,
+			helm.UpdateValueOverrides([]byte(helmObj.Spec.Values)),
+			//helm.UpgradeForce(true), ?
+		)
+		if err != nil {
+			return err
+		}
 		rel = res.GetRelease()
 	}
 
