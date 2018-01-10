@@ -17,9 +17,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/bitnami/helm-crd/pkg/client/clientset/versioned"
-	helmv1 "github.com/bitnami/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
-	fakehelmv1 "github.com/bitnami/helm-crd/pkg/client/clientset/versioned/typed/helm/v1/fake"
+	clientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
+	helmv1 "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
+	fakehelmv1 "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned/typed/helm/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

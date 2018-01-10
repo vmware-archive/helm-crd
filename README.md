@@ -38,8 +38,8 @@ spec:
 d=$HOME/.kube/plugins/helm
 mkdir -p $d; cd $d
 wget \
- https://raw.githubusercontent.com/bitnami/helm-crd/master/plugin/helm/helm \
- https://raw.githubusercontent.com/bitnami/helm-crd/master/plugin/helm/plugin.yaml
+ https://raw.githubusercontent.com/bitnami-labs/helm-crd/master/plugin/helm/helm \
+ https://raw.githubusercontent.com/bitnami-labs/helm-crd/master/plugin/helm/plugin.yaml
 chmod +x helm
 ```
 

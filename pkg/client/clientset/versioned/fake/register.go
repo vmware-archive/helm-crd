@@ -17,7 +17,7 @@ limitations under the License.
 package fake
 
 import (
-	helmv1 "github.com/bitnami/helm-crd/pkg/apis/helm.bitnami.com/v1"
+	helmv1 "github.com/bitnami-labs/helm-crd/pkg/apis/helm.bitnami.com/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
