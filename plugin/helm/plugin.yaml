@@ -22,7 +22,7 @@ tree:
     flags:
       - name: url
         desc: URL of YAML to install
-        defValue: "https://raw.githubusercontent.com/bitnami/helm-crd/master/deploy/tiller-crd.yaml"
+        defValue: "https://raw.githubusercontent.com/bitnami-labs/helm-crd/master/deploy/tiller-crd.yaml"
 
   - name: list
     shortDesc: list releases

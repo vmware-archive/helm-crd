@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/helm/pkg/helm/environment"
 
-	helmClientset "github.com/bitnami/helm-crd/pkg/client/clientset/versioned"
+	helmClientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
 )
 
 var (

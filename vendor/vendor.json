@@ -1411,5 +1411,5 @@
 			"revisionTime": "2017-11-01T18:35:04Z"
 		}
 	],
-	"rootPath": "github.com/bitnami/helm-crd"
+	"rootPath": "github.com/bitnami-labs/helm-crd"
 }

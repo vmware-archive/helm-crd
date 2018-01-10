@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/bitnami/helm-crd/pkg/client/clientset/versioned"
-	helmv1 "github.com/bitnami/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
-	fakehelmv1 "github.com/bitnami/helm-crd/pkg/client/clientset/versioned/typed/helm/v1/fake"
+	clientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
+	helmv1 "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
+	fakehelmv1 "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned/typed/helm/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
