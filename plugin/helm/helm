@@ -57,8 +57,7 @@ EOF
 {"spec":
 ${KUBECTL_PLUGINS_LOCAL_FLAG_REPO:+"repoUrl": $KUBECTL_PLUGINS_LOCAL_FLAG_REPO}
 ${KUBECTL_PLUGINS_LOCAL_FLAG_VERSION:+"version": $KUBECTL_PLUGINS_LOCAL_FLAG_VERSION}
-${values:+"values": "$(echo $values | json_escape)"}
-}
+${values:+"values": "$(echo $values | json_escape)"}}
 EOF
         kubectl patch helmrelease $name -p "$patch"
         ;;
