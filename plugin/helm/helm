@@ -2,7 +2,7 @@
 
 set -e
 test $KUBECTL_PLUGINS_GLOBAL_FLAG_V -gt 4 && set -x
-alias kubectl="$KUBECTL_PLUGINS_CALLER -n $KUBECTL_PLUGINS_CURRENT_NAMESPACE"
+alias kubectl="$KUBECTL_PLUGINS_CALLER -n $KUBECTL_PLUGINS_CURRENT_NAMESPACE -v=$KUBECTL_PLUGINS_GLOBAL_FLAG_V"
 
 values_yaml() {
     if [ "$KUBECTL_PLUGINS_LOCAL_FLAG_VALUES" != "" ]; then
@@ -53,14 +53,18 @@ EOF
         name="$1"; shift
 
         values=$(values_yaml)
-        patch=$(cat <<EOF)
-{"spec":
-${KUBECTL_PLUGINS_LOCAL_FLAG_REPO:+"repoUrl": $KUBECTL_PLUGINS_LOCAL_FLAG_REPO}
-${KUBECTL_PLUGINS_LOCAL_FLAG_VERSION:+"version": $KUBECTL_PLUGINS_LOCAL_FLAG_VERSION}
-${values:+"values": "$(echo $values | json_escape)"}
-}
+        q=\"
+        patch=$(cat <<EOF
+{"metadata": {"annotations": {"helm.bitnami.com/k8s-53379-workaround": "$(date +%s)"}}},
+{"spec": {
+${KUBECTL_PLUGINS_LOCAL_FLAG_VERSION:+${q}version${q}: ${q}$KUBECTL_PLUGINS_LOCAL_FLAG_VERSION${q},}
+${values:+${q}values${q}: ${q}$(echo $values | json_escape)${q},}
+"repoUrl": "$KUBECTL_PLUGINS_LOCAL_FLAG_REPO"
+}}
 EOF
-        kubectl patch helmrelease $name -p "$patch"
+             )
+        # NB: --type=strategic is broken for CRDs (k8s v1.8)
+        kubectl patch helmrelease $name -p "$patch" --type=merge
         ;;
 
     delete)

@@ -1,5 +1,14 @@
 name: helm
 shortDesc: Helm chart plugin
+longDesc: |
+  The Kubernetes package manager (CRD version)
+
+  To begin working with Helm, run the command:
+
+          $ kubectl plugin helm init
+
+  This will install Tiller and the helm-crd controller to your running
+  Kubernetes cluster.
 tree:
   - name: init
     shortDesc: initialize Helm-CRD on server
@@ -38,7 +47,7 @@ tree:
         desc: specify values in a YAML file
       - name: set
         desc: >-
-          set values on the command line (can specify separate
+          set values on the command line (can specify multiple or separate
           values with commas: key1=val1,key2=val2)
 
   - name: upgrade
