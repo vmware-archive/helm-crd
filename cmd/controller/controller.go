@@ -22,8 +22,8 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/repo"
 
-	helmCrdV1 "github.com/bitnami/helm-crd/pkg/apis/helm.bitnami.com/v1"
-	helmClientset "github.com/bitnami/helm-crd/pkg/client/clientset/versioned"
+	helmCrdV1 "github.com/bitnami-labs/helm-crd/pkg/apis/helm.bitnami.com/v1"
+	helmClientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
 )
 
 const (

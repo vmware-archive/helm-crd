@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ limitations under the License.
 package versioned
 
 import (
-	helmv1 "github.com/bitnami/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
+	helmv1 "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned/typed/helm/v1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"

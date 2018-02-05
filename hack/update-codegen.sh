@@ -6,6 +6,6 @@ mydir=${0#*/}
 
 vendor/k8s.io/code-generator/generate-groups.sh \
     all \
-    github.com/bitnami/helm-crd/pkg/client \
-    github.com/bitnami/helm-crd/pkg/apis \
+    github.com/bitnami-labs/helm-crd/pkg/client \
+    github.com/bitnami-labs/helm-crd/pkg/apis \
     helm.bitnami.com:v1
