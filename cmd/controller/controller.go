@@ -1,13 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -16,9 +21,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/downloader"
-	"k8s.io/helm/pkg/getter"
 	"k8s.io/helm/pkg/helm"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/repo"
 
@@ -36,6 +40,14 @@ type Controller struct {
 	queue      workqueue.RateLimitingInterface
 	informer   cache.SharedIndexInformer
 	helmClient *helm.Client
+}
+
+type httpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+var netClient httpClient = &http.Client{
+	Timeout: time.Second * 10,
 }
 
 // NewController creates a Controller
@@ -155,6 +167,83 @@ func (c *Controller) processNextItem() bool {
 	return true
 }
 
+func fetchUrl(reqURL, authHeader string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(authHeader) > 0 {
+		req.Header.Set("Authorization", authHeader)
+	}
+	return netClient.Do(req)
+}
+
+func fetchRepoIndex(repoURL string, authHeader string) (*repo.IndexFile, error) {
+	parsedURL, err := url.ParseRequestURI(strings.TrimSpace(repoURL))
+	if err != nil {
+		return nil, err
+	}
+	parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/index.yaml"
+
+	res, err := fetchUrl(parsedURL.String(), authHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("repo index request failed")
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	index := &repo.IndexFile{}
+	err = yaml.Unmarshal(body, index)
+	if err != nil {
+		return index, err
+	}
+	index.SortEntries()
+	return index, nil
+}
+
+func findChartInRepoIndex(repoIndex *repo.IndexFile, chartName, chartVersion string) (string, error) {
+	errMsg := fmt.Sprintf("chart %q", chartName)
+	if chartVersion != "" {
+		errMsg = fmt.Sprintf("%s version %q", errMsg, chartVersion)
+	}
+	cv, err := repoIndex.Get(chartName, chartVersion)
+	if err != nil {
+		return "", fmt.Errorf("%s not found in repository", errMsg)
+	}
+
+	if len(cv.URLs) == 0 {
+		return "", fmt.Errorf("%s has no downloadable URLs", errMsg)
+	}
+	return cv.URLs[0], nil
+}
+
+func fetchChart(chartURL, authHeader string) (*chart.Chart, error) {
+	res, err := fetchUrl(chartURL, authHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("chart download request failed")
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return chartutil.LoadArchive(bytes.NewReader(body))
+}
+
 func releaseName(ns, name string) string {
 	return fmt.Sprintf("%s-%s", ns, name)
 }
@@ -190,38 +279,25 @@ func (c *Controller) updateRelease(key string) error {
 
 	helmObj := obj.(*helmCrdV1.HelmRelease)
 
-	// FIXME: make configurable
-	keyring := "/keyring/pubring.gpg"
-
-	dl := downloader.ChartDownloader{
-		HelmHome: settings.Home,
-		Out:      os.Stdout,
-		Keyring:  keyring,
-		Getters:  getter.All(settings),
-		Verify:   downloader.VerifyNever, // FIXME
-	}
-
 	repoURL := helmObj.Spec.RepoURL
 	if repoURL == "" {
 		// FIXME: Make configurable
 		repoURL = defaultRepoURL
 	}
 
-	certFile := ""
-	keyFile := ""
-	caFile := ""
-	chartURL, err := repo.FindChartInRepoURL(repoURL, helmObj.Spec.ChartName, helmObj.Spec.Version, certFile, keyFile, caFile, getter.All(settings))
+	log.Printf("Downloading repo %s index...", repoURL)
+	repoIndex, err := fetchRepoIndex(repoURL, "")
+	if err != nil {
+		return err
+	}
+
+	chartURL, err := findChartInRepoIndex(repoIndex, helmObj.Spec.ChartName, helmObj.Spec.Version)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("Downloading %s ...", chartURL)
-	fname, _, err := dl.DownloadTo(chartURL, helmObj.Spec.Version, settings.Home.Archive())
-	if err != nil {
-		return err
-	}
-	log.Printf("Downloaded %s to %s", chartURL, fname)
-	chartRequested, err := chartutil.LoadFile(fname) // fixme: just download to ram buf
+	chartRequested, err := fetchChart(chartURL, "")
 	if err != nil {
 		return err
 	}
