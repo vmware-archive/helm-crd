@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/helm/pkg/chartutil"
@@ -31,14 +32,16 @@ import (
 )
 
 const (
-	defaultRepoURL = "https://kubernetes-charts.storage.googleapis.com"
-	maxRetries     = 5
+	defaultNamespace = "kube-system"
+	defaultRepoURL   = "https://kubernetes-charts.storage.googleapis.com"
+	maxRetries       = 5
 )
 
 // Controller is a cache.Controller for acting on Helm CRD objects
 type Controller struct {
 	queue      workqueue.RateLimitingInterface
 	informer   cache.SharedIndexInformer
+	kubeClient kubernetes.Interface
 	helmClient *helm.Client
 }
 
@@ -51,7 +54,7 @@ var netClient httpClient = &http.Client{
 }
 
 // NewController creates a Controller
-func NewController(clientset helmClientset.Interface) cache.Controller {
+func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Interface) cache.Controller {
 	lw := cache.NewListWatchFromClient(clientset.HelmV1().RESTClient(), "helmreleases", metav1.NamespaceAll, fields.Everything())
 
 	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -89,6 +92,7 @@ func NewController(clientset helmClientset.Interface) cache.Controller {
 	return &Controller{
 		informer:   informer,
 		queue:      queue,
+		kubeClient: kubeClient,
 		helmClient: helm.NewClient(helm.Host(settings.TillerHost)),
 	}
 }
@@ -285,8 +289,25 @@ func (c *Controller) updateRelease(key string) error {
 		repoURL = defaultRepoURL
 	}
 
+	authHeader := ""
+	if helmObj.Spec.Auth != nil {
+		if helmObj.Spec.Auth.Header != nil {
+			namespace := os.Getenv("POD_NAMESPACE")
+			if namespace == "" {
+				namespace = defaultNamespace
+			}
+			secret, err := c.kubeClient.Core().Secrets(namespace).Get(helmObj.Spec.Auth.Header.SecretKeyRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			var b bytes.Buffer
+			b.Write(secret.Data[helmObj.Spec.Auth.Header.SecretKeyRef.Key])
+			authHeader = b.String()
+		}
+	}
+
 	log.Printf("Downloading repo %s index...", repoURL)
-	repoIndex, err := fetchRepoIndex(repoURL, "")
+	repoIndex, err := fetchRepoIndex(repoURL, authHeader)
 	if err != nil {
 		return err
 	}
@@ -297,7 +318,7 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	log.Printf("Downloading %s ...", chartURL)
-	chartRequested, err := fetchChart(chartURL, "")
+	chartRequested, err := fetchChart(chartURL, authHeader)
 	if err != nil {
 		return err
 	}
