@@ -26,7 +26,7 @@ type HelmReleaseSpec struct {
 	// Version is the chart version
 	Version string `json:"version,omitempty"`
 	// Auth is the authentication
-	Auth *HelmReleaseAuth `json:"auth,omitempty"`
+	Auth HelmReleaseAuth `json:"auth,omitempty"`
 	// Values is a string containing (unparsed) YAML values
 	Values string `json:"values,omitempty"`
 }

@@ -290,20 +290,18 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	authHeader := ""
-	if helmObj.Spec.Auth != nil {
-		if helmObj.Spec.Auth.Header != nil {
-			namespace := os.Getenv("POD_NAMESPACE")
-			if namespace == "" {
-				namespace = defaultNamespace
-			}
-			secret, err := c.kubeClient.Core().Secrets(namespace).Get(helmObj.Spec.Auth.Header.SecretKeyRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-			var b bytes.Buffer
-			b.Write(secret.Data[helmObj.Spec.Auth.Header.SecretKeyRef.Key])
-			authHeader = b.String()
+	if helmObj.Spec.Auth.Header != nil {
+		namespace := os.Getenv("POD_NAMESPACE")
+		if namespace == "" {
+			namespace = defaultNamespace
 		}
+		secret, err := c.kubeClient.Core().Secrets(namespace).Get(helmObj.Spec.Auth.Header.SecretKeyRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		var b bytes.Buffer
+		b.Write(secret.Data[helmObj.Spec.Auth.Header.SecretKeyRef.Key])
+		authHeader = b.String()
 	}
 
 	log.Printf("Downloading repo %s index...", repoURL)
