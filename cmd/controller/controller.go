@@ -45,6 +45,7 @@ type Controller struct {
 	informer   cache.SharedIndexInformer
 	kubeClient kubernetes.Interface
 	helmClient *helm.Client
+	netClient  *http.Client
 }
 
 type httpClient interface {
@@ -92,6 +93,9 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 		queue:      queue,
 		kubeClient: kubeClient,
 		helmClient: helm.NewClient(helm.Host(settings.TillerHost)),
+		netClient: &http.Client{
+			Timeout: time.Second * defaultTimeoutSeconds,
+		},
 	}
 }
 
@@ -181,17 +185,12 @@ func fetchUrl(netClient httpClient, reqURL, authHeader string) (*http.Response, 
 	return netClient.Do(req)
 }
 
-func fetchRepoIndex(repoURL string, authHeader string) (*repo.IndexFile, error) {
-
+func fetchRepoIndex(netClient httpClient, repoURL string, authHeader string) (*repo.IndexFile, error) {
 	parsedURL, err := url.ParseRequestURI(strings.TrimSpace(repoURL))
 	if err != nil {
 		return nil, err
 	}
 	parsedURL.Path = path.Join(parsedURL.Path, "index.yaml")
-
-	netClient := &http.Client{
-		Timeout: time.Second * defaultTimeoutSeconds,
-	}
 
 	res, err := fetchUrl(netClient, parsedURL.String(), authHeader)
 	if res != nil {
@@ -235,11 +234,7 @@ func findChartInRepoIndex(repoIndex *repo.IndexFile, chartName, chartVersion str
 	return cv.URLs[0], nil
 }
 
-func fetchChart(chartURL, authHeader string) (*chart.Chart, error) {
-	netClient := &http.Client{
-		Timeout: time.Second * defaultTimeoutSeconds,
-	}
-
+func fetchChart(netClient httpClient, chartURL, authHeader string) (*chart.Chart, error) {
 	res, err := fetchUrl(netClient, chartURL, authHeader)
 	if res != nil {
 		defer res.Body.Close()
@@ -327,7 +322,7 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	log.Printf("Downloading repo %s index...", repoURL)
-	repoIndex, err := fetchRepoIndex(repoURL, authHeader)
+	repoIndex, err := fetchRepoIndex(c.netClient, repoURL, authHeader)
 	if err != nil {
 		return err
 	}
@@ -343,7 +338,7 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	log.Printf("Downloading %s ...", chartURL)
-	chartRequested, err := fetchChart(chartURL, authHeader)
+	chartRequested, err := fetchChart(c.netClient, chartURL, authHeader)
 	if err != nil {
 		return err
 	}
