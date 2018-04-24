@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -32,9 +33,10 @@ import (
 )
 
 const (
-	defaultNamespace = "kube-system"
-	defaultRepoURL   = "https://kubernetes-charts.storage.googleapis.com"
-	maxRetries       = 5
+	defaultNamespace      = metav1.NamespaceSystem
+	defaultRepoURL        = "https://kubernetes-charts.storage.googleapis.com"
+	defaultTimeoutSeconds = 180
+	maxRetries            = 5
 )
 
 // Controller is a cache.Controller for acting on Helm CRD objects
@@ -47,10 +49,6 @@ type Controller struct {
 
 type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
-}
-
-var netClient httpClient = &http.Client{
-	Timeout: time.Second * 10,
 }
 
 // NewController creates a Controller
@@ -171,7 +169,7 @@ func (c *Controller) processNextItem() bool {
 	return true
 }
 
-func fetchUrl(reqURL, authHeader string) (*http.Response, error) {
+func fetchUrl(netClient httpClient, reqURL, authHeader string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, err
@@ -184,13 +182,21 @@ func fetchUrl(reqURL, authHeader string) (*http.Response, error) {
 }
 
 func fetchRepoIndex(repoURL string, authHeader string) (*repo.IndexFile, error) {
+
 	parsedURL, err := url.ParseRequestURI(strings.TrimSpace(repoURL))
 	if err != nil {
 		return nil, err
 	}
-	parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/") + "/index.yaml"
+	parsedURL.Path = path.Join(parsedURL.Path, "index.yaml")
 
-	res, err := fetchUrl(parsedURL.String(), authHeader)
+	netClient := &http.Client{
+		Timeout: time.Second * defaultTimeoutSeconds,
+	}
+
+	res, err := fetchUrl(netClient, parsedURL.String(), authHeader)
+	if res != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +205,6 @@ func fetchRepoIndex(repoURL string, authHeader string) (*repo.IndexFile, error) 
 		return nil, errors.New("repo index request failed")
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
@@ -231,7 +236,14 @@ func findChartInRepoIndex(repoIndex *repo.IndexFile, chartName, chartVersion str
 }
 
 func fetchChart(chartURL, authHeader string) (*chart.Chart, error) {
-	res, err := fetchUrl(chartURL, authHeader)
+	netClient := &http.Client{
+		Timeout: time.Second * defaultTimeoutSeconds,
+	}
+
+	res, err := fetchUrl(netClient, chartURL, authHeader)
+	if res != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +252,6 @@ func fetchChart(chartURL, authHeader string) (*chart.Chart, error) {
 		return nil, errors.New("chart download request failed")
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
@@ -256,6 +267,19 @@ func isNotFound(err error) bool {
 	// Ideally this would be `grpc.Code(err) == codes.NotFound`,
 	// but it seems helm doesn't return grpc codes
 	return strings.Contains(grpc.ErrorDesc(err), "not found")
+}
+
+func resolveURL(base, ref string) (string, error) {
+	refURL, err := url.Parse(ref)
+	if err != nil {
+		baseURL, err := url.Parse(base)
+		if err != nil {
+			return "", err
+		}
+		baseURL.Path = path.Join(baseURL.Path, ref)
+		return baseURL.String(), nil
+	}
+	return refURL.String(), nil
 }
 
 func (c *Controller) updateRelease(key string) error {
@@ -295,13 +319,12 @@ func (c *Controller) updateRelease(key string) error {
 		if namespace == "" {
 			namespace = defaultNamespace
 		}
+
 		secret, err := c.kubeClient.Core().Secrets(namespace).Get(helmObj.Spec.Auth.Header.SecretKeyRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		var b bytes.Buffer
-		b.Write(secret.Data[helmObj.Spec.Auth.Header.SecretKeyRef.Key])
-		authHeader = b.String()
+		authHeader = string(secret.Data[helmObj.Spec.Auth.Header.SecretKeyRef.Key])
 	}
 
 	log.Printf("Downloading repo %s index...", repoURL)
@@ -311,6 +334,11 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	chartURL, err := findChartInRepoIndex(repoIndex, helmObj.Spec.ChartName, helmObj.Spec.Version)
+	if err != nil {
+		return err
+	}
+
+	chartURL, err = resolveURL(repoURL, chartURL)
 	if err != nil {
 		return err
 	}

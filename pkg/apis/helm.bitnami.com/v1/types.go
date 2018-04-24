@@ -33,7 +33,12 @@ type HelmReleaseSpec struct {
 
 type HelmReleaseAuth struct {
 	// Header is header based Authorization
-	Header *corev1.EnvVarSource `json:"header,omitempty"`
+	Header *HelmReleaseAuthHeader `json:"header,omitempty"`
+}
+
+type HelmReleaseAuthHeader struct {
+	// Selects a key of a secret in the pod's namespace
+	SecretKeyRef corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
