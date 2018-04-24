@@ -270,12 +270,11 @@ func isNotFound(err error) bool {
 }
 
 func resolveURL(base, ref string) (string, error) {
-	refURL, err := url.Parse(ref)
+	base = strings.TrimSpace(base)
+	ref = strings.TrimSpace(ref)
+	refURL, err := url.ParseRequestURI(ref)
 	if err != nil {
-		baseURL, err := url.Parse(base)
-		if err != nil {
-			return "", err
-		}
+		baseURL, _ := url.Parse(base)
 		baseURL.Path = path.Join(baseURL.Path, ref)
 		return baseURL.String(), nil
 	}

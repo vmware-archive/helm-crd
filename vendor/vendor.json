@@ -27,6 +27,12 @@
 			"revisionTime": "2017-08-10T14:37:23Z"
 		},
 		{
+			"checksumSHA1": "TuXW7wfAzroxfUyA2BYVZkAUU6w=",
+			"path": "github.com/arschles/assert",
+			"revision": "bb58b908265b5931732079df03f2818bf2167ba0",
+			"revisionTime": "2016-10-18T16:26:22Z"
+		},
+		{
 			"checksumSHA1": "mrz/kicZiUaHxkyfvC/DyQcr8Do=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "ecdeabc65495df2dec95d7c4a4c3e021903035e5",
