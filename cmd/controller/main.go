@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/pflag"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/helm/pkg/helm/environment"
 
@@ -26,12 +27,17 @@ func main2() error {
 		return err
 	}
 
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
 	clientset, err := helmClientset.NewForConfig(config)
 	if err != nil {
 		return err
 	}
 
-	controller := NewController(clientset)
+	controller := NewController(clientset, kubeClient)
 
 	stop := make(chan struct{})
 	defer close(stop)
