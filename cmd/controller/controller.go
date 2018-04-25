@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -306,7 +305,7 @@ func (c *Controller) updateRelease(key string) error {
 		// FIXME: Make configurable
 		repoURL = defaultRepoURL
 	}
-	repoURL = path.Join(strings.TrimSuffix(strings.TrimSpace(repoURL), "/index.yaml"), "index.yaml")
+	repoURL = strings.TrimSuffix(strings.TrimSpace(repoURL), "/") + "/index.yaml"
 
 	authHeader := ""
 	if helmObj.Spec.Auth.Header != nil {
