@@ -186,7 +186,7 @@ func fetchUrl(netClient httpClient, reqURL, authHeader string) (*http.Response, 
 }
 
 func fetchRepoIndex(netClient httpClient, repoURL string, authHeader string) (*repo.IndexFile, error) {
-	parsedURL, err := url.ParseRequestURI(strings.TrimSpace(repoURL))
+	parsedURL, err := url.ParseRequestURI(strings.TrimSuffix(strings.TrimSpace(repoURL), "index.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func isNotFound(err error) bool {
 }
 
 func resolveURL(base, ref string) (string, error) {
-	base = strings.TrimSpace(base)
+	base = strings.TrimSuffix(strings.TrimSpace(base), "index.yaml")
 	ref = strings.TrimSpace(ref)
 	refURL, err := url.ParseRequestURI(ref)
 	if err != nil {
