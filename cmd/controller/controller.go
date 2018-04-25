@@ -186,11 +186,10 @@ func fetchUrl(netClient httpClient, reqURL, authHeader string) (*http.Response, 
 }
 
 func fetchRepoIndex(netClient httpClient, repoURL string, authHeader string) (*repo.IndexFile, error) {
-	parsedURL, err := url.ParseRequestURI(strings.TrimSuffix(strings.TrimSpace(repoURL), "index.yaml"))
+	parsedURL, err := url.ParseRequestURI(repoURL)
 	if err != nil {
 		return nil, err
 	}
-	parsedURL.Path = path.Join(parsedURL.Path, "index.yaml")
 
 	res, err := fetchUrl(netClient, parsedURL.String(), authHeader)
 	if res != nil {
@@ -264,16 +263,17 @@ func isNotFound(err error) bool {
 	return strings.Contains(grpc.ErrorDesc(err), "not found")
 }
 
-func resolveURL(base, ref string) (string, error) {
-	base = strings.TrimSuffix(strings.TrimSpace(base), "index.yaml")
-	ref = strings.TrimSpace(ref)
-	refURL, err := url.ParseRequestURI(ref)
+//
+func resolveChartURL(index, chart string) (string, error) {
+	indexURL, err := url.Parse(strings.TrimSpace(index))
 	if err != nil {
-		baseURL, _ := url.Parse(base)
-		baseURL.Path = path.Join(baseURL.Path, ref)
-		return baseURL.String(), nil
+		return "", err
 	}
-	return refURL.String(), nil
+	chartURL, err := indexURL.Parse(strings.TrimSpace(chart))
+	if err != nil {
+		return "", err
+	}
+	return chartURL.String(), nil
 }
 
 func (c *Controller) updateRelease(key string) error {
@@ -306,6 +306,7 @@ func (c *Controller) updateRelease(key string) error {
 		// FIXME: Make configurable
 		repoURL = defaultRepoURL
 	}
+	repoURL = path.Join(strings.TrimSuffix(strings.TrimSpace(repoURL), "/index.yaml"), "index.yaml")
 
 	authHeader := ""
 	if helmObj.Spec.Auth.Header != nil {
@@ -332,7 +333,7 @@ func (c *Controller) updateRelease(key string) error {
 		return err
 	}
 
-	chartURL, err = resolveURL(repoURL, chartURL)
+	chartURL, err = resolveChartURL(repoURL, chartURL)
 	if err != nil {
 		return err
 	}
