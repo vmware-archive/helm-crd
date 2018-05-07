@@ -1,4 +1,4 @@
-// This is literally `helm init -o json` from helm version v2.7.2, with the image upated to v2.9.0
+// This is literally `helm init -o json` from helm version v2.9.0
 {
     "apiVersion": "extensions/v1beta1",
     "kind": "Deployment",
@@ -12,6 +12,7 @@
         "namespace": "kube-system"
     },
     "spec": {
+        "replicas": 1,
         "strategy": {},
         "template": {
             "metadata": {
@@ -22,6 +23,7 @@
                 }
             },
             "spec": {
+                "automountServiceAccountToken": false,
                 "containers": [
                     {
                         "env": [
@@ -49,6 +51,10 @@
                             {
                                 "containerPort": 44134,
                                 "name": "tiller"
+                            },
+                            {
+                                "containerPort": 44135,
+                                "name": "http"
                             }
                         ],
                         "readinessProbe": {
