@@ -275,6 +275,14 @@ func resolveChartURL(index, chart string) (string, error) {
 	return chartURL.String(), nil
 }
 
+func getReleaseName(r *helmCrdV1.HelmRelease) string {
+	rname := r.Spec.ReleaseName
+	if rname == "" {
+		rname = fmt.Sprintf("%s-%s", r.Namespace, r.Name)
+	}
+	return rname
+}
+
 func (c *Controller) updateRelease(key string) error {
 	obj, exists, err := c.informer.GetIndexer().GetByKey(key)
 	if err != nil {
@@ -343,8 +351,7 @@ func (c *Controller) updateRelease(key string) error {
 		return err
 	}
 
-	rlsName := releaseName(helmObj.Namespace, helmObj.Name)
-
+	rlsName := getReleaseName(helmObj)
 	var rel *release.Release
 
 	_, err = c.helmClient.ReleaseHistory(rlsName, helm.WithMaxHistory(1))
