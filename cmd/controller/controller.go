@@ -34,17 +34,19 @@ import (
 const (
 	defaultNamespace      = metav1.NamespaceSystem
 	defaultRepoURL        = "https://kubernetes-charts.storage.googleapis.com"
+	releaseFinalizer      = "helm.bitnami.com/helmrelease"
 	defaultTimeoutSeconds = 180
 	maxRetries            = 5
 )
 
 // Controller is a cache.Controller for acting on Helm CRD objects
 type Controller struct {
-	queue      workqueue.RateLimitingInterface
-	informer   cache.SharedIndexInformer
-	kubeClient kubernetes.Interface
-	helmClient *helm.Client
-	netClient  *http.Client
+	queue             workqueue.RateLimitingInterface
+	informer          cache.SharedIndexInformer
+	kubeClient        kubernetes.Interface
+	helmReleaseClient helmClientset.Interface
+	helmClient        *helm.Client
+	netClient         *http.Client
 }
 
 type httpClient interface {
@@ -88,10 +90,11 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 	log.Printf("Using tiller host: %s", settings.TillerHost)
 
 	return &Controller{
-		informer:   informer,
-		queue:      queue,
-		kubeClient: kubeClient,
-		helmClient: helm.NewClient(helm.Host(settings.TillerHost)),
+		informer:          informer,
+		queue:             queue,
+		kubeClient:        kubeClient,
+		helmReleaseClient: clientset,
+		helmClient:        helm.NewClient(helm.Host(settings.TillerHost)),
 		netClient: &http.Client{
 			Timeout: time.Second * defaultTimeoutSeconds,
 		},
@@ -252,17 +255,12 @@ func fetchChart(netClient httpClient, chartURL, authHeader string) (*chart.Chart
 	return chartutil.LoadArchive(bytes.NewReader(body))
 }
 
-func releaseName(ns, name string) string {
-	return fmt.Sprintf("%s-%s", ns, name)
-}
-
 func isNotFound(err error) bool {
 	// Ideally this would be `grpc.Code(err) == codes.NotFound`,
 	// but it seems helm doesn't return grpc codes
 	return strings.Contains(grpc.ErrorDesc(err), "not found")
 }
 
-//
 func resolveChartURL(index, chart string) (string, error) {
 	indexURL, err := url.Parse(strings.TrimSpace(index))
 	if err != nil {
@@ -283,30 +281,92 @@ func getReleaseName(r *helmCrdV1.HelmRelease) string {
 	return rname
 }
 
+func findIndex(target string, s []string) int {
+	res := -1
+	for i := range s {
+		if s[i] == target {
+			res = i
+		}
+	}
+	return res
+}
+func pull(item string, s []string) ([]string, error) {
+	index := findIndex(item, s)
+	if index == -1 {
+		return []string{}, fmt.Errorf("%s not present in %v", item, s)
+	}
+	return append(s[:index], s[index+1:]...), nil
+}
+func hasFinalizer(h *helmCrdV1.HelmRelease) bool {
+	currentFinalizers := h.ObjectMeta.Finalizers
+	for _, f := range currentFinalizers {
+		if f == releaseFinalizer {
+			return true
+		}
+	}
+	return false
+}
+
+func removeFinalizer(helmReleaseClient helmClientset.Interface, helmObj *helmCrdV1.HelmRelease) error {
+	helmObjClone := helmObj.DeepCopy()
+	newSlice, _ := pull(releaseFinalizer, helmObj.ObjectMeta.Finalizers)
+	if len(newSlice) == 0 {
+		newSlice = nil
+	}
+	helmObjClone.ObjectMeta.Finalizers = newSlice
+	_, err := helmReleaseClient.HelmV1().HelmReleases(helmObj.Namespace).Update(helmObjClone)
+	return err
+}
+
+func addFinalizer(helmReleaseClient helmClientset.Interface, helmObj *helmCrdV1.HelmRelease) error {
+	helmObjClone := helmObj.DeepCopy()
+	helmObjClone.ObjectMeta.Finalizers = append(helmObjClone.ObjectMeta.Finalizers, releaseFinalizer)
+	_, err := helmReleaseClient.HelmV1().HelmReleases(helmObj.Namespace).Update(helmObjClone)
+	return err
+}
+
 func (c *Controller) updateRelease(key string) error {
 	obj, exists, err := c.informer.GetIndexer().GetByKey(key)
 	if err != nil {
 		return fmt.Errorf("error fetching object with key %s from store: %v", key, err)
 	}
 
+	// this is an update when Function API object is actually deleted, we dont need to process anything here
 	if !exists {
-		log.Printf("HelmRelease %s has gone, uninstalling chart", key)
-		ns, name, err := cache.SplitMetaNamespaceKey(key)
-		if err != nil {
-			return err
-		}
-		_, err = c.helmClient.DeleteRelease(
-			releaseName(ns, name),
-			helm.DeletePurge(true),
-		)
-		if err != nil {
-			// fixme: ignore "not found" or similar
-			return err
-		}
+		log.Printf("HelmRelease object %s not found in the cache, ignoring the deletion update", key)
 		return nil
 	}
 
 	helmObj := obj.(*helmCrdV1.HelmRelease)
+
+	if helmObj.ObjectMeta.DeletionTimestamp != nil {
+		log.Printf("HelmRelease %s marked to be deleted, uninstalling chart", key)
+		// If finalizer is removed, then we already processed the delete update, so just return
+		if !hasFinalizer(helmObj) {
+			return nil
+		}
+		_, err = c.helmClient.DeleteRelease(getReleaseName(helmObj), helm.DeletePurge(true))
+		if err != nil {
+			return err
+		}
+
+		// remove finalizer from the function object, so that we dont have to process any further and object can be deleted
+		err = removeFinalizer(c.helmReleaseClient, helmObj)
+		if err != nil {
+			log.Printf("Failed to remove finalizer for obj: %s object due to: %v: ", key, err)
+			return err
+		}
+		log.Printf("Release %s has been successfully processed and marked for deletion", key)
+		return nil
+	}
+
+	if !hasFinalizer(helmObj) {
+		err = addFinalizer(c.helmReleaseClient, helmObj)
+		if err != nil {
+			log.Printf("Error adding finalizer to %s due to: %v: ", key, err)
+			return err
+		}
+	}
 
 	repoURL := helmObj.Spec.RepoURL
 	if repoURL == "" {
