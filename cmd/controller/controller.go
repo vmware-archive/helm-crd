@@ -282,20 +282,30 @@ func getReleaseName(r *helmCrdV1.HelmRelease) string {
 }
 
 func findIndex(target string, s []string) int {
-	res := -1
 	for i := range s {
 		if s[i] == target {
-			res = i
+			return i
 		}
 	}
-	return res
+	return -1
 }
-func pull(item string, s []string) ([]string, error) {
+
+func removeIndex(i int, s []string) []string {
+	lastIdx := len(s) - 1
+	if i != lastIdx {
+		s[i] = s[lastIdx]
+	}
+	s[lastIdx] = "" // drop reference to string contents
+	return s[:lastIdx]
+}
+
+// remove item from slice without keeping order
+func remove(item string, s []string) ([]string, error) {
 	index := findIndex(item, s)
 	if index == -1 {
 		return []string{}, fmt.Errorf("%s not present in %v", item, s)
 	}
-	return append(s[:index], s[index+1:]...), nil
+	return removeIndex(index, s), nil
 }
 func hasFinalizer(h *helmCrdV1.HelmRelease) bool {
 	currentFinalizers := h.ObjectMeta.Finalizers
@@ -307,21 +317,24 @@ func hasFinalizer(h *helmCrdV1.HelmRelease) bool {
 	return false
 }
 
-func removeFinalizer(helmReleaseClient helmClientset.Interface, helmObj *helmCrdV1.HelmRelease) error {
+func removeFinalizer(helmObj *helmCrdV1.HelmRelease) *helmCrdV1.HelmRelease {
 	helmObjClone := helmObj.DeepCopy()
-	newSlice, _ := pull(releaseFinalizer, helmObj.ObjectMeta.Finalizers)
+	newSlice, _ := remove(releaseFinalizer, helmObj.ObjectMeta.Finalizers)
 	if len(newSlice) == 0 {
 		newSlice = nil
 	}
 	helmObjClone.ObjectMeta.Finalizers = newSlice
-	_, err := helmReleaseClient.HelmV1().HelmReleases(helmObj.Namespace).Update(helmObjClone)
-	return err
+	return helmObjClone
 }
 
-func addFinalizer(helmReleaseClient helmClientset.Interface, helmObj *helmCrdV1.HelmRelease) error {
+func addFinalizer(helmObj *helmCrdV1.HelmRelease) *helmCrdV1.HelmRelease {
 	helmObjClone := helmObj.DeepCopy()
 	helmObjClone.ObjectMeta.Finalizers = append(helmObjClone.ObjectMeta.Finalizers, releaseFinalizer)
-	_, err := helmReleaseClient.HelmV1().HelmReleases(helmObj.Namespace).Update(helmObjClone)
+	return helmObjClone
+}
+
+func updateHelmRelease(helmReleaseClient helmClientset.Interface, helmObj *helmCrdV1.HelmRelease) error {
+	_, err := helmReleaseClient.HelmV1().HelmReleases(helmObj.Namespace).Update(helmObj)
 	return err
 }
 
@@ -351,7 +364,8 @@ func (c *Controller) updateRelease(key string) error {
 		}
 
 		// remove finalizer from the function object, so that we dont have to process any further and object can be deleted
-		err = removeFinalizer(c.helmReleaseClient, helmObj)
+		helmObjCopy := removeFinalizer(helmObj)
+		err = updateHelmRelease(c.helmReleaseClient, helmObjCopy)
 		if err != nil {
 			log.Printf("Failed to remove finalizer for obj: %s object due to: %v: ", key, err)
 			return err
@@ -361,7 +375,8 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	if !hasFinalizer(helmObj) {
-		err = addFinalizer(c.helmReleaseClient, helmObj)
+		helmObjCopy := addFinalizer(helmObj)
+		err = updateHelmRelease(c.helmReleaseClient, helmObjCopy)
 		if err != nil {
 			log.Printf("Error adding finalizer to %s due to: %v: ", key, err)
 			return err

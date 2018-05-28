@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/arschles/assert"
+	helmCrdV1 "github.com/bitnami-labs/helm-crd/pkg/apis/helm.bitnami.com/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TODO: add more tests
@@ -46,5 +49,37 @@ func Test_resolveChartURL(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Equal(t, chartURL, tt.wantedURL, "url")
 		})
+	}
+}
+
+func TestAddFinalizer(t *testing.T) {
+	tests := []struct {
+		src               *helmCrdV1.HelmRelease
+		expectedFinalizer []string
+	}{
+		{&helmCrdV1.HelmRelease{}, []string{"helm.bitnami.com/helmrelease"}},
+		{&helmCrdV1.HelmRelease{ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"foo"}}}, []string{"foo", "helm.bitnami.com/helmrelease"}},
+	}
+	for _, tt := range tests {
+		res := addFinalizer(tt.src)
+		if !apiequality.Semantic.DeepEqual(res.ObjectMeta.Finalizers, tt.expectedFinalizer) {
+			t.Errorf("Expecting %v received %v", tt.expectedFinalizer, res.ObjectMeta.Finalizers)
+		}
+	}
+}
+
+func TestRemoveFinalizer(t *testing.T) {
+	tests := []struct {
+		src               *helmCrdV1.HelmRelease
+		expectedFinalizer []string
+	}{
+		{&helmCrdV1.HelmRelease{ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"helm.bitnami.com/helmrelease"}}}, []string{}},
+		{&helmCrdV1.HelmRelease{ObjectMeta: metav1.ObjectMeta{Finalizers: []string{"foo", "helm.bitnami.com/helmrelease", "bar"}}}, []string{"foo", "bar"}},
+	}
+	for _, tt := range tests {
+		res := removeFinalizer(tt.src)
+		if !apiequality.Semantic.DeepEqual(res.ObjectMeta.Finalizers, tt.expectedFinalizer) {
+			t.Errorf("Expecting %v received %v", tt.expectedFinalizer, res.ObjectMeta.Finalizers)
+		}
 	}
 }

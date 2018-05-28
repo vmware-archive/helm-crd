@@ -23,7 +23,7 @@ type HelmReleaseSpec struct {
 	RepoURL string `json:"repoUrl,omitempty"`
 	// ChartName is the name of the chart within the repo
 	ChartName string `json:"chartName,omitempty"`
-	// ReleaseName is the Name of the release given to Tiller. Defaults to stable namespace-name.
+	// ReleaseName is the Name of the release given to Tiller. Defaults to amespace-name. Must not be changed after initial object creation.
 	ReleaseName string `json:"releaseName,omitempty"`
 	// Version is the chart version
 	Version string `json:"version,omitempty"`
