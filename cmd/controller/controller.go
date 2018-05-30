@@ -1,18 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -21,14 +16,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/release"
-	"k8s.io/helm/pkg/repo"
 
 	helmCrdV1 "github.com/bitnami-labs/helm-crd/pkg/apis/helm.bitnami.com/v1"
 	helmClientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
+	chartUtils "github.com/bitnami-labs/helm-crd/pkg/utils/chart"
 )
 
 const (
@@ -45,16 +38,13 @@ type Controller struct {
 	informer          cache.SharedIndexInformer
 	kubeClient        kubernetes.Interface
 	helmReleaseClient helmClientset.Interface
-	helmClient        *helm.Client
-	netClient         *http.Client
-}
-
-type httpClient interface {
-	Do(req *http.Request) (*http.Response, error)
+	helmClient        helm.Interface
+	netClient         *chartUtils.HTTPClient
+	loadChart         chartUtils.LoadChart
 }
 
 // NewController creates a Controller
-func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Interface) cache.Controller {
+func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Interface, helmClient helm.Interface, netClient chartUtils.HTTPClient, loadChart chartUtils.LoadChart) *Controller {
 	lw := cache.NewListWatchFromClient(clientset.HelmV1().RESTClient(), "helmreleases", metav1.NamespaceAll, fields.Everything())
 
 	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -87,17 +77,14 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 		},
 	})
 
-	log.Printf("Using tiller host: %s", settings.TillerHost)
-
 	return &Controller{
+		helmReleaseClient: clientset,
 		informer:          informer,
 		queue:             queue,
 		kubeClient:        kubeClient,
-		helmReleaseClient: clientset,
-		helmClient:        helm.NewClient(helm.Host(settings.TillerHost)),
-		netClient: &http.Client{
-			Timeout: time.Second * defaultTimeoutSeconds,
-		},
+		helmClient:        helmClient,
+		netClient:         &netClient,
+		loadChart:         loadChart,
 	}
 }
 
@@ -175,102 +162,10 @@ func (c *Controller) processNextItem() bool {
 	return true
 }
 
-func fetchUrl(netClient httpClient, reqURL, authHeader string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", reqURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(authHeader) > 0 {
-		req.Header.Set("Authorization", authHeader)
-	}
-	return netClient.Do(req)
-}
-
-func fetchRepoIndex(netClient httpClient, repoURL string, authHeader string) (*repo.IndexFile, error) {
-	parsedURL, err := url.ParseRequestURI(repoURL)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := fetchUrl(netClient, parsedURL.String(), authHeader)
-	if res != nil {
-		defer res.Body.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("repo index request failed")
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	index := &repo.IndexFile{}
-	err = yaml.Unmarshal(body, index)
-	if err != nil {
-		return index, err
-	}
-	index.SortEntries()
-	return index, nil
-}
-
-func findChartInRepoIndex(repoIndex *repo.IndexFile, chartName, chartVersion string) (string, error) {
-	errMsg := fmt.Sprintf("chart %q", chartName)
-	if chartVersion != "" {
-		errMsg = fmt.Sprintf("%s version %q", errMsg, chartVersion)
-	}
-	cv, err := repoIndex.Get(chartName, chartVersion)
-	if err != nil {
-		return "", fmt.Errorf("%s not found in repository", errMsg)
-	}
-
-	if len(cv.URLs) == 0 {
-		return "", fmt.Errorf("%s has no downloadable URLs", errMsg)
-	}
-	return cv.URLs[0], nil
-}
-
-func fetchChart(netClient httpClient, chartURL, authHeader string) (*chart.Chart, error) {
-	res, err := fetchUrl(netClient, chartURL, authHeader)
-	if res != nil {
-		defer res.Body.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("chart download request failed")
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	return chartutil.LoadArchive(bytes.NewReader(body))
-}
-
 func isNotFound(err error) bool {
 	// Ideally this would be `grpc.Code(err) == codes.NotFound`,
 	// but it seems helm doesn't return grpc codes
 	return strings.Contains(grpc.ErrorDesc(err), "not found")
-}
-
-func resolveChartURL(index, chart string) (string, error) {
-	indexURL, err := url.Parse(strings.TrimSpace(index))
-	if err != nil {
-		return "", err
-	}
-	chartURL, err := indexURL.Parse(strings.TrimSpace(chart))
-	if err != nil {
-		return "", err
-	}
-	return chartURL.String(), nil
 }
 
 func getReleaseName(r *helmCrdV1.HelmRelease) string {
@@ -405,23 +300,18 @@ func (c *Controller) updateRelease(key string) error {
 	}
 
 	log.Printf("Downloading repo %s index...", repoURL)
-	repoIndex, err := fetchRepoIndex(c.netClient, repoURL, authHeader)
+	repoIndex, err := chartUtils.FetchRepoIndex(c.netClient, repoURL, authHeader)
 	if err != nil {
 		return err
 	}
 
-	chartURL, err := findChartInRepoIndex(repoIndex, helmObj.Spec.ChartName, helmObj.Spec.Version)
-	if err != nil {
-		return err
-	}
-
-	chartURL, err = resolveChartURL(repoURL, chartURL)
+	chartURL, err := chartUtils.FindChartInRepoIndex(repoIndex, repoURL, helmObj.Spec.ChartName, helmObj.Spec.Version)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("Downloading %s ...", chartURL)
-	chartRequested, err := fetchChart(c.netClient, chartURL, authHeader)
+	chartRequested, err := chartUtils.FetchChart(c.netClient, chartURL, authHeader, c.loadChart)
 	if err != nil {
 		return err
 	}
@@ -429,9 +319,9 @@ func (c *Controller) updateRelease(key string) error {
 	rlsName := getReleaseName(helmObj)
 	var rel *release.Release
 
-	_, err = c.helmClient.ReleaseHistory(rlsName, helm.WithMaxHistory(1))
-	if err != nil {
-		if !isNotFound(err) {
+	h, err := c.helmClient.ReleaseHistory(rlsName, helm.WithMaxHistory(1))
+	if err != nil || len(h.GetReleases()) == 0 {
+		if err != nil && !isNotFound(err) {
 			return err
 		}
 		log.Printf("Installing release %s into namespace %s", rlsName, helmObj.Namespace)
@@ -461,7 +351,10 @@ func (c *Controller) updateRelease(key string) error {
 
 	status, err := c.helmClient.ReleaseStatus(rel.Name)
 	if err == nil {
-		log.Printf("Installed/updated release %s (status %s)", rel.Name, status.Info.Status.Code)
+		log.Printf("Installed/updated release %s", rel.Name)
+		if status.Info != nil && status.Info.Status != nil {
+			log.Printf("Release status: %s", status.Info.Status.Code)
+		}
 	} else {
 		log.Printf("Unable to fetch release status for %s: %v", rel.Name, err)
 	}
