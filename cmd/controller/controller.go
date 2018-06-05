@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -66,7 +67,11 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(newObj)
 			if err == nil {
-				queue.Add(key)
+				newReleaseObj := newObj.(*helmCrdV1.HelmRelease)
+				oldReleaseObj := oldObj.(*helmCrdV1.HelmRelease)
+				if releaseObjChanged(oldReleaseObj, newReleaseObj) {
+					queue.Add(key)
+				}
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -192,6 +197,17 @@ func removeIndex(i int, s []string) []string {
 	}
 	s[lastIdx] = "" // drop reference to string contents
 	return s[:lastIdx]
+}
+
+func releaseObjChanged(old, new *helmCrdV1.HelmRelease) bool {
+	// If the object deletion timestamp is set, then process
+	if old.DeletionTimestamp != new.DeletionTimestamp {
+		return true
+	}
+	if !apiequality.Semantic.DeepEqual(old.Spec, new.Spec) {
+		return true
+	}
+	return false
 }
 
 // remove item from slice without keeping order
