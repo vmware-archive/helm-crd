@@ -71,6 +71,8 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 				oldReleaseObj := oldObj.(*helmCrdV1.HelmRelease)
 				if releaseObjChanged(oldReleaseObj, newReleaseObj) {
 					queue.Add(key)
+				} else {
+					log.Debugf("Ignoring update event on unchanged object %v", newReleaseObj)
 				}
 			}
 		},
@@ -204,10 +206,7 @@ func releaseObjChanged(old, new *helmCrdV1.HelmRelease) bool {
 	if old.DeletionTimestamp != new.DeletionTimestamp {
 		return true
 	}
-	if !apiequality.Semantic.DeepEqual(old.Spec, new.Spec) {
-		return true
-	}
-	return false
+	return !apiequality.Semantic.DeepEqual(old.Spec, new.Spec)
 }
 
 // remove item from slice without keeping order
