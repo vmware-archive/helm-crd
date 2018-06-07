@@ -72,7 +72,7 @@ func NewController(clientset helmClientset.Interface, kubeClient kubernetes.Inte
 				if releaseObjChanged(oldReleaseObj, newReleaseObj) {
 					queue.Add(key)
 				} else {
-					log.Debugf("Ignoring update event on unchanged object %v", newReleaseObj)
+					log.Printf("Ignoring update event on unchanged object %v", newReleaseObj)
 				}
 			}
 		},
