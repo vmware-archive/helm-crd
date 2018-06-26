@@ -23,7 +23,6 @@
                 }
             },
             "spec": {
-                "automountServiceAccountToken": false,
                 "containers": [
                     {
                         "env": [
@@ -36,7 +35,7 @@
                                 "value": "0"
                             }
                         ],
-                        "image": "gcr.io/kubernetes-helm/tiller:v2.9.0",
+                        "image": "gcr.io/kubernetes-helm/tiller:v2.9.1",
                         "imagePullPolicy": "IfNotPresent",
                         "livenessProbe": {
                             "httpGet": {
