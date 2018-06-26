@@ -1,13 +1,18 @@
 package main
 
 import (
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/helm/environment"
 
 	helmClientset "github.com/bitnami-labs/helm-crd/pkg/client/clientset/versioned"
@@ -37,7 +42,14 @@ func main2() error {
 		return err
 	}
 
-	controller := NewController(clientset, kubeClient)
+	log.Printf("Using tiller host: %s", settings.TillerHost)
+	helmClient := helm.NewClient(helm.Host(settings.TillerHost))
+
+	netClient := &http.Client{
+		Timeout: time.Second * defaultTimeoutSeconds,
+	}
+
+	controller := NewController(clientset, kubeClient, helmClient, netClient, chartutil.LoadArchive)
 
 	stop := make(chan struct{})
 	defer close(stop)
