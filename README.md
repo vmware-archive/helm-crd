@@ -58,7 +58,7 @@ kubectl apply -n kube-system -f deploy/tiller-crd.yaml
 ```
 
 This will create the CRD, and replace(!) any existing
-`kube-system/tiller-deploy` with an unmodified tiller v2.9.0 release
+`kube-system/tiller-deploy` with an unmodified tiller v2.9.1 release
 with the tiller port restricted *and* a new `controller` sidecar.
 
 To use, start creating API objects similar to the example above.
