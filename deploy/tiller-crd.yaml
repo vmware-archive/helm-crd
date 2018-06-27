@@ -23,6 +23,7 @@ metadata:
   name: tiller-deploy
   namespace: kube-system
 spec:
+  replicas: 1
   strategy: {}
   template:
     metadata:
@@ -41,7 +42,7 @@ spec:
           value: kube-system
         - name: TILLER_HISTORY_MAX
           value: "0"
-        image: gcr.io/kubernetes-helm/tiller:v2.7.2
+        image: gcr.io/kubernetes-helm/tiller:v2.9.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
