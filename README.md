@@ -2,6 +2,8 @@
 
 This is an **experimental** CRD controller for Helm releases.
 
+> This project is currently not under active development.
+
 You can use this to install, upgrade and delete charts in your cluster
 via regular Kubernetes API objects that look like:
 
