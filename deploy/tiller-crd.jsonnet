@@ -46,6 +46,37 @@ local controller_overlay = {
 
 {
   crd: utils.CustomResourceDefinition("helm.bitnami.com", "v1", "HelmRelease"),
+  crd: utils.CustomResourceDefinition("helm.bitnami.com", "v1", "HelmRelease") {
+    spec+: {
+      names+: {shortNames: ["hr", "release"]},
+      validation: {
+        openAPIV3Schema: {
+          "$schema": "http://json-schema.org/draft-04/schema#",
+          description: "Helm chart release",
+          type: "object",
+          properties: {
+            spec: {
+              type: "object",
+              properties: {
+                repoUrl: {
+                  type: "string", // URL
+                },
+                chartName: {
+                  type: "string",
+                },
+                version: {
+                  type: "string",
+                },
+                values: {
+                  type: "string", // YAML
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 
   tiller: tiller + controller_overlay,
 }
